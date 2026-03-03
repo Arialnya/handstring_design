@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能设备控制台</title>
+  <style>
+    :root {
+      --primary-color: #008080;
+      --secondary-color: #f0f8ff;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: var(--secondary-color);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .controls {
+      margin-top: 15px;
+    }
+
+    input[type="number"] {
+      width: 120px;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .real-time h1 {
+      background: var(--primary-color);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- 实时数据展示 -->
+    <div class="card real-time">
+      <h1>实时传感器数据</h1>
+      <p>温度: <span id="temperature">--</span>°C</p>
+      <p>湿度: <span id="humidity">--</span>%</p>
+      <p>距离: <span id="distance">--</span>cm</p>
+    </div>
+
+    <!-- 阈值控制面板 -->
+    <div class="card control-panel">
+      <h2>阈值设置</h2>
+      <div class="controls">
+        <label>温度上限 (°C):</label>
+        <input type="number" id="tempThreshold" step="0.1">
+        
+
+        <label>湿度上限 (%):</label>
+        <input type="number" id="humidThreshold" step="1">
+        
+
+        <label>距离上限 (cm):</label>
+        <input type="number" id="distThreshold" step="10">
+        
+
+        <button onclick="updateThresholds()">应用设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 实时数据更新
+    setInterval(() => {
+      fetch("/data")
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("temperature").textContent = data.temperature;
+          document.getElementById("humidity").textContent = data.humidity;
+          document.getElementById("distance").textContent = data.distance;
+        });
+    }, 2000);
+
+    // 阈值设置功能
+    async function updateThresholds() {
+      const thresholds = {
+        temp: document.getElementById("tempThreshold").value,
+        humid: document.getElementById("humidThreshold").value,
+        dist: document.getElementById("distThreshold").value
+      };
+
+      try {
+        const response = await fetch("/setThresholds", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(thresholds)
+        });
+        
+        if (!response.ok) throw new Error("设置失败");
+        alert("阈值更新成功!");
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    // 初始化加载当前阈值
+    fetch("/getThresholds")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("tempThreshold").value = data.temp;
+        document.getElementById("humidThreshold").value = data.humid;
+        document.getElementById("distThreshold").value = data.dist;
+      });
+  </script>
+</body>
+</html>
